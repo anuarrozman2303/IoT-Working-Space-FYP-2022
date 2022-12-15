@@ -3,7 +3,7 @@
 #define BLYNK_AUTH_TOKEN "zmFpMhwKFk1N0gjtJOte95wKcwC9B6WG"
 #define BLYNK_PRINT Serial
 #define DATABASE_URL "test-5a42b-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define DATABASE_SECRET "G8TMr0HZlm5buQZ8gJpdpQXr3d6lqmKH4KpPRLn6"
+#define DATABASE_SECRET "EinObk758cqiUwi05wRJNDtBmiweE4FXv68dlBWh"
 
 #include <WiFi101.h>
 #include <WiFiUdp.h>
@@ -61,30 +61,36 @@ Servo myservo;
 #define LAMP2 5    //Pin Lamp 2
 #define rfidLED 0 //Pin Red LED RFID
 
-#define ZMPT101B A0  //Pin AC Voltage Sensor 
-int RawValue = 0; 
-float testFrequency = 50; 
-float windowLength = 125/testFrequency;
+#define ZMPT101B A0                            //Analog input
+float testFrequency = 50;                     // test signal frequency (Hz)
+float windowLength = 125/testFrequency;       // how long to average the signal, for statistist, changing this can have drastic effect
+                                              // Test as you need
+int RawValue = 0;     
 float Volts_TRMS;     // estimated actual voltage in Volts
 float intercept = -5;  // to be adjusted based on calibration testin
-float slope = 1.35; 
+float slope = 1.35;    
 RunningStatistics inputStats; //This class collects the value so we can apply some functions
+unsigned long printPeriod = 1000; //Measuring frequency, every 1s, can be changed
+unsigned long previousMillis = 0;
 
 //Virtual Pin (BLYNK)
 int vLAMP1; 
 int vLAMP2;
 int vIRFAN;
 
+//Database Control
+bool dbLamp1, dbLamp2, dbIRApp;
+
 /*--------------------------BLYNK Virtual Pin--------------------------*/
-BLYNK_WRITE(V1) {
-  vLAMP1 = param.asInt();
+BLYNK_WRITE(V0) {
+  vLAMP1 = param.asInt(); 
 }
 
-BLYNK_WRITE(V2) {
+BLYNK_WRITE(V1) {
   vLAMP2 = param.asInt(); 
 }
 
-BLYNK_WRITE(V3) {
+BLYNK_WRITE(V2) {
   vIRFAN = param.asInt(); 
 }
 /*----------------------------------------------------------------------*/
@@ -129,10 +135,8 @@ void setupDISPLAY(){
   lcd.begin();                                                            
   lcd.backlight();
   lcd.clear();
-  lcd.setCursor(3,0);
-  lcd.print("IoT Working");
-  lcd.setCursor(5,1);
-  lcd.print("Space");
+  lcd.setCursor(0,0);
+  lcd.print("IoT Work Space");
 
   //OLED Setup
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -221,7 +225,7 @@ void rtcDateTime(){
     Serial.println("");
     Serial.println(Day + M + " 20" + Year);
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0,1);
     lcd.print(Day + M + " 20" + Year);
   }
   else{}
@@ -235,45 +239,37 @@ void print2digits(int number) {
 }
 
 void controlvLAMP(){
-  BLYNK_WRITE(vLAMP1);
-  BLYNK_WRITE(vLAMP2);
-  BLYNK_WRITE(vIRLAMP);
-  if (vLAMP1 == 1){
+  if (dbLamp1 == 1){
     digitalWrite(LAMP1,HIGH);
     Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP1", "ON");
-    Serial.println("LAMP1:ON");
   }
     else{
       digitalWrite(LAMP1,LOW);
       Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP1", "OFF");
-      Serial.println("LAMP1:OFF");
     }
 
-  if (vLAMP2 == 1){
-    digitalWrite(LAMP1,HIGH);
+  if (dbLamp2 == 1){
+    digitalWrite(LAMP2,HIGH);
     Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP2", "ON");
-    Serial.println("LAMP2:ON");
   }
     else{
-      digitalWrite(LAMP1,LOW);
+      digitalWrite(LAMP2,LOW);
       Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP2", "OFF");
-      Serial.println("LAMP2:OFF");
-    }
+    }  
+
   if (vIRFAN == 1){
     Firebase.setString(firebaseData, "/MEETING ROOM 1/FAN", "ON");
     myservo.detach();
     IrSender.sendNEC(0xFFE01F, 32);
     IrSender.sendNEC(0xFFE01F, 32);
-    IrSender.sendNEC(0xFFE01F, 32);
-    Serial.println("ON");    
+    IrSender.sendNEC(0xFFE01F, 32);   
   }
-    else if (vIRFAN == 0){
+    else{
       Firebase.setString(firebaseData, "/MEETING ROOM 1/FAN", "OFF");
       myservo.detach();
       IrSender.sendNEC(0xFF609F, 32);
       IrSender.sendNEC(0xFF609F, 32);
-      IrSender.sendNEC(0xFF609F, 32);
-      Serial.println("OFF");    
+      IrSender.sendNEC(0xFF609F, 32);   
     } 
 }
 
@@ -362,10 +358,10 @@ void dhtOLED(){
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
   }
-  Blynk.virtualWrite(V1, t);
-  Blynk.virtualWrite(V0, h);
-  Firebase.setFloat(firebaseData, "/IoT_Working_Space/TEMPERATURE", t);
-  Firebase.setFloat(firebaseData, "/Meeting Room 1/HUMIDITY", h);
+  Blynk.virtualWrite(V3, t);
+  Blynk.virtualWrite(V4, h);
+  Firebase.setFloat(firebaseData, "/Meeting ROOM 1/TEMPERATURE", t);
+  Firebase.setFloat(firebaseData, "/Meeting ROOM 1/HUMIDITY", h);
 
   display.clearDisplay();
   
@@ -395,7 +391,7 @@ void dhtOLED(){
   display.display();
 }
 
-void getCheckOut(){
+void getCheckOut(){   //Get Check Out Time From Database
   if (Firebase.getInt(firebaseData, "/CHECKOUT/HOURS")){
     if (firebaseData.dataType() == "int"){
       checkOutHours = (firebaseData.intData());
@@ -404,6 +400,24 @@ void getCheckOut(){
   if (Firebase.getInt(firebaseData, "/CHECKOUT/MINUTES")){
     if (firebaseData.dataType() == "int"){
       checkOutMins = (firebaseData.intData());
+    }
+  }
+}
+
+void getDatabaseControl(){   //Get Check Out Time From Database
+  if (Firebase.getBool(firebaseData, "/MKR1000/LAMP1")){
+    if (firebaseData.dataType() == "boolean"){
+      dbLamp1 = (firebaseData.boolData());
+    }
+  }
+  if (Firebase.getBool(firebaseData, "/MKR1000/LAMP2")){
+    if (firebaseData.dataType() == "boolean"){
+      dbLamp2 = (firebaseData.boolData());
+    }
+  }
+  if (Firebase.getBool(firebaseData, "/MKR1000/IR APP")){
+    if (firebaseData.dataType() == "boolean"){
+      dbIRApp = (firebaseData.boolData());
     }
   }
 }
@@ -417,6 +431,7 @@ void controlAPP(){
     }
 }
 
+//voltage return mengarut bila on
 void voltSensor(){
     RawValue = analogRead(ZMPT101B);  // read the analog in value:
     inputStats.input(RawValue);       // log to Stats function
@@ -429,13 +444,15 @@ void voltSensor(){
       Serial.print("AC Voltage: ");
       Serial.print("\t");
       Serial.println(Volts_TRMS);
-    
   }
 }
 
 void loop() {
-  Blynk.run();
+  voltSensor();
   rtcDateTime();
+  Blynk.run();
+  getCheckOut();
+  getDatabaseControl();
   controlAPP();
   dhtOLED();
   rfidDOOR();
