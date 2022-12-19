@@ -6,7 +6,7 @@
 
 #include <Filters.h>                            //Library to use
 
-#define ZMPT101B A0                            //Analog input
+#define ZMPT101B 35                            //Analog input
 
 float testFrequency = 50;                     // test signal frequency (Hz)
 float windowLength = 125/testFrequency;       // how long to average the signal, for statistist, changing this can have drastic effect
@@ -15,8 +15,8 @@ float windowLength = 125/testFrequency;       // how long to average the signal,
 int RawValue = 0;     
 float Volts_TRMS;     // estimated actual voltage in Volts
 
-float intercept = -5;  // to be adjusted based on calibration testin
-float slope = 1.35;      
+float intercept = 0;  // to be adjusted based on calibration testin
+float slope = 1;      
 
 /* How to get the intercept and slope? First keep them like above, intercept=0 and slope=1, 
  * also below keep displaying Calibrated and non calibrated values to help you in this process.
@@ -38,7 +38,7 @@ unsigned long previousMillis = 0;
 RunningStatistics inputStats; //This class collects the value so we can apply some functions
 
 void setup() {
-  Serial.begin(115200);    // start the serial port
+  Serial.begin(9600);    // start the serial port
   Serial.println("Serial started");
   inputStats.setWindowSecs( windowLength );
 }
@@ -61,13 +61,25 @@ float ReadVoltage(){
       Volts_TRMS = inputStats.sigma()* slope + intercept;
 //      Volts_TRMS = Volts_TRMS*0.979;              //Further calibration if needed
       
-      Serial.print("Non Calibrated: ");
-      Serial.print("\t");
-      Serial.print(inputStats.sigma()); 
-      Serial.print("\t");
-      Serial.print("Calibrated: ");
-      Serial.print("\t");
-      Serial.println(Volts_TRMS);
-    
+      if (Volts_TRMS < 10){
+        Volts_TRMS = 0;
+          Serial.print("Non Calibrated: ");
+          Serial.print("\t");
+          Serial.print(inputStats.sigma()); 
+          Serial.print("\t");
+          Serial.print("Calibrated: ");
+          Serial.print("\t");
+          Serial.println(Volts_TRMS);
+      }
+        else{
+          Serial.print("Non Calibrated: ");
+          Serial.print("\t");
+          Serial.print(inputStats.sigma()); 
+          Serial.print("\t");
+          Serial.print("Calibrated: ");
+          Serial.print("\t");
+          Serial.println(Volts_TRMS);
+        }
+
   }
 }

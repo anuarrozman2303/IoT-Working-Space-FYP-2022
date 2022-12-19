@@ -1,5 +1,8 @@
 #define DATABASE_URL "test-5a42b-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define DATABASE_SECRET "EinObk758cqiUwi05wRJNDtBmiweE4FXv68dlBWh"
+#define BLYNK_TEMPLATE_ID "TMPLVzbHHHYj"
+#define BLYNK_DEVICE_NAME "IoT Working Space"
+#define BLYNK_AUTH_TOKEN "zmFpMhwKFk1N0gjtJOte95wKcwC9B6WG"
 
 #include <WiFi101.h>
 #include <WiFiUdp.h>
@@ -19,6 +22,7 @@
 
 char SSID[] = "semanz";
 char PASSWORD[] = "33632407";
+char AUTH[] = BLYNK_AUTH_TOKEN;
 
 RTCZero rtc;
 const int GMT = +8;  // Time zone constant
@@ -54,6 +58,8 @@ Servo myservo;
 #define LAMP1 20    //Pin Lamp 1
 #define LAMP2 21    //Pin Lamp 2
 #define rfidLED 0  //Pin Red LED RFID
+
+int vLAMP1, vLAMP2, vIRAPP;
 
 //Database Control
 bool dbLamp1, dbLamp2, dbIRApp;
@@ -122,6 +128,7 @@ void setupMISC() {
   myservo.write(0);
 
   IrSender.begin(IRTX);
+  Blynk.begin(AUTH, SSID, PASSWORD);
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, SSID, PASSWORD);
   Firebase.reconnectWiFi(true);
 }
@@ -143,50 +150,43 @@ void setup() {
   setupLED();
 }
 
-/*-------------------------------------------LOOP------------------------------------------*/
-void printTime(){
-  print2digits(rtc.getHours() + GMT);
-  Serial.print(":");
-  
-  print2digits(rtc.getMinutes());
-  Serial.print(":");
-  
-  print2digits(rtc.getSeconds());
-  Serial.println();
-}
-
-void printDate(){
-  Serial.print(rtc.getDay());
-  Serial.print("/");
-  
-  Serial.print(rtc.getMonth());
-  Serial.print("/");
-  
-  Serial.print(rtc.getYear());
-  Serial.print(" ");
-}
-
-String print2digits(int number) {
-  if (number < 10) {
-    Serial.print("0");
+/*-------------------------------------------Blynk Virtual Pins------------------------------------------*/
+BLYNK_WRITE(V0) {
+  vLAMP1 = param.asInt(); // assigning incoming value from pin V2 to a variable "/CONTROL/LAMP1"
+  if (vLAMP1 == 1){
+    Firebase.setBool(firebaseData, "/CONTROL/LAMP1", true);
   }
-  Serial.print(number);
+  else{
+    Firebase.setBool(firebaseData, "/CONTROL/LAMP1", false);
+  }
 }
+
+BLYNK_WRITE(V1) {
+  vLAMP2 = param.asInt(); 
+  if (vLAMP2 == 1){
+    Firebase.setBool(firebaseData, "/CONTROL/LAMP2", true);
+  }
+  else{
+    Firebase.setBool(firebaseData, "/CONTROL/LAMP2", false);
+  }
+}
+
+BLYNK_WRITE(V2) {
+  vIRAPP = param.asInt(); 
+  if (vIRAPP == 1){
+    Firebase.setBool(firebaseData, "/CONTROL/IR APP", true);
+  }
+  else{
+    Firebase.setBool(firebaseData, "/CONTROL/IR APP", false);
+  } 
+}
+
+
+/*-------------------------------------------LOOP------------------------------------------*/
 
 void lcdDate(){
   lcd.setCursor(0,1);
   lcd.print(String(rtc.getDay()) + "/" + String(rtc.getMonth()) + "/" + "20" + String(rtc.getYear()));
-}
-
-// Set Time to Run Every 1 Sec
-void TIME() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - timeStarted >= intTime) {
-    timeStarted = currentMillis;
-    printDate();
-    printTime();
-  }
-  else{}
 }
 
 void controlvLAMP() {
@@ -384,11 +384,11 @@ void controlAPP() {
 }
 
 void loop() {
-  TIME();
   lcdDate();
   rfidDOOR();
   dhtOLED();
   getCheckOut();
+  Blynk.run();
   getDatabaseControl();
   controlAPP();
 }
