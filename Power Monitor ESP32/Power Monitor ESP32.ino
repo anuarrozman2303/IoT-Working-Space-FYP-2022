@@ -1,12 +1,11 @@
 
- 
 #include "EmonLib.h"   //https://github.com/openenergymonitor/EmonLib
 #include <WiFi.h>
 #include <WiFiClient.h>
 
 EnergyMonitor emon;
 #define vCalibration 83.0
-#define currCalibration 0.169
+#define currCalibration 1.25
 
 float kWh = 0;
 unsigned long lastmillis = millis();
@@ -36,17 +35,23 @@ void myTimerEvent() {
     Serial.print(emon.Irms, 4);
     Serial.println("A");
   }
-
+  if (emon.Irms == 0 && emon.Vrms == 0){
+    emon.apparentPower = 0;
+    Serial.print("\tPower: ");
+    Serial.print(emon.apparentPower, 4);
+    Serial.println("W");    
+  }
+  else{
     Serial.print("\tPower: ");
     Serial.print(emon.apparentPower, 4);
     Serial.println("W");
+  }
 
     Serial.print("\tkWh: ");
     kWh = kWh + emon.apparentPower*(millis()-lastmillis)/3600000000.0;
     Serial.print(kWh, 4);
     Serial.println("kWh");
     lastmillis = millis();
-
 }
  
 void setup() {

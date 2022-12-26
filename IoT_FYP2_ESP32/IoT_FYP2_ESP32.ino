@@ -1,7 +1,10 @@
 #include <SinricPro.h>
 #include <SinricProSwitch.h>
 #include <WiFi.h>
+#include <WiFiClient.h>
 #include <FirebaseESP32.h>
+#include <EmonLib.h> 
+#include <BlynkSimpleEsp32.h>
 #include <addons/TokenHelper.h>   // Provide the token generation process info.
 #include <addons/RTDBHelper.h>    // Provide the RTDB payload printing info and other helper functions.
 
@@ -12,8 +15,9 @@
        #define NDEBUG
 #endif 
 
-#define WIFI_SSID         "semanz"    
-#define WIFI_PASS         "33632407"
+#define BLYNK_TEMPLATE_ID "TMPLVzbHHHYj"
+#define BLYNK_DEVICE_NAME "IoT Working Space"
+#define BLYNK_AUTH_TOKEN  "zmFpMhwKFk1N0gjtJOte95wKcwC9B6WG"
 #define FIREBASE_HOST     "test-5a42b-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH     "EinObk758cqiUwi05wRJNDtBmiweE4FXv68dlBWh"
 #define APP_KEY           "47f05c0b-8f2c-4b74-a5d2-c00aec445c57"      
@@ -22,10 +26,17 @@
 #define LAMP1             "638f7c72b8a7fefbd6568b49"   
 #define LAMP2             "6390948e333d12dd2a0bd4bd"  
 
+char SSID[] = "semanz";
+char PASSWORD[] = "33632407";
+char AUTH[] = BLYNK_AUTH_TOKEN;
+
 FirebaseData fbdo;
 
+EnergyMonitor emon1; 
+float Irms;  
+
 void setupWIFI() {
-  WiFi.begin(WIFI_SSID , WIFI_PASS);
+  WiFi.begin(SSID , PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -53,11 +64,16 @@ void setupSinricPro() {
   SinricPro.begin(APP_KEY, APP_SECRET);
 }
 
+void setupEnergy(){
+  emon1.current(34, 30); 
+}
+
 void setup() {
   Serial.begin(9600);
   setupWIFI();
   setupFB();
   setupSinricPro();
+  setupEnergy();
 }
 
 bool onPowerState1(const String &deviceId, bool &state) {
@@ -96,6 +112,18 @@ bool onPowerState3(const String &deviceId, bool &state) {
   return true;
 }
 
+void currentMeter() {
+  Irms = emon1.calcIrms(5588) - 1.3;  // Calculate Irms only
+  if (Irms < 0){
+    Irms = 0;
+    Serial.println(Irms,2);               // Irms    
+  }
+  else {
+    Serial.println(Irms,2);               // Irms   
+  }
+}
+
 void loop() {
   SinricPro.handle();
+  currentMeter();
 }

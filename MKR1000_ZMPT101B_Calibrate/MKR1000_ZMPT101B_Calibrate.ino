@@ -80,6 +80,5 @@ float ReadVoltage(){
           Serial.print("\t");
           Serial.println(Volts_TRMS);
         }
-
   }
 }

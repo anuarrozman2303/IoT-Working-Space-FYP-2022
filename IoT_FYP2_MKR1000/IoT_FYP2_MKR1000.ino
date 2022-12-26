@@ -29,8 +29,6 @@ const int GMT = +8;  // Time zone constant
 int Hours, Mins, Secs, Day, Month;
 String Year;
 int checkOutHours, checkOutMins;
-unsigned long timeStarted = 0;
-const long intTime = 1000;
 
 FirebaseData firebaseData;
 
@@ -58,6 +56,8 @@ Servo myservo;
 #define LAMP1 20    //Pin Lamp 1
 #define LAMP2 21    //Pin Lamp 2
 #define rfidLED 0  //Pin Red LED RFID
+#define pirIN 17  //PIR In n
+#define pirOUT 18 //PIR Out
 
 int vLAMP1, vLAMP2, vIRAPP;
 
@@ -248,7 +248,7 @@ void rfidPermitted() {
   delay(300);
   noTone(ALARM);
   digitalWrite(rfidLED, LOW);
-  delay(1000);
+  delay(2000);  //2s
   myservo.write(0);
   myservo.detach();
   lcd.clear();
@@ -344,13 +344,26 @@ void dhtOLED() {
   display.display();
 }
 
-void getCheckOut() {  //Get Check Out Time From Database
+/*----------------------check in algo------------------------*/
+void getCheckIO() {  //Get Check Out Time From Database
+  //CHECKOUT
   if (Firebase.getInt(firebaseData, "/CHECKOUT/HOURS")) {
     if (firebaseData.dataType() == "int") {
       checkOutHours = (firebaseData.intData());
     }
   }
   if (Firebase.getInt(firebaseData, "/CHECKOUT/MINUTES")) {
+    if (firebaseData.dataType() == "int") {
+      checkOutMins = (firebaseData.intData());
+    }
+  }
+  //CHECKIN
+  if (Firebase.getInt(firebaseData, "/CHECKIN/HOURS")) {
+    if (firebaseData.dataType() == "int") {
+      checkOutHours = (firebaseData.intData());
+    }
+  }
+  if (Firebase.getInt(firebaseData, "/CHECKIN/MINUTES")) {
     if (firebaseData.dataType() == "int") {
       checkOutMins = (firebaseData.intData());
     }
@@ -383,11 +396,16 @@ void controlAPP() {
   } else {}
 }
 
+//prep algo
+void standby(){
+   
+}
+
 void loop() {
   lcdDate();
   rfidDOOR();
   dhtOLED();
-  getCheckOut();
+  getCheckIO();
   Blynk.run();
   getDatabaseControl();
   controlAPP();
