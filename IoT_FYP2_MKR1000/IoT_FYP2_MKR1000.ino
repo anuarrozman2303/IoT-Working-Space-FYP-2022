@@ -53,11 +53,9 @@ Servo myservo;
 
 #define ALARM 4    //Pin Buzzer
 #define IRTX 1     //Pin IR Transmitter
-#define LAMP1 20    //Pin Lamp 1
-#define LAMP2 21    //Pin Lamp 2
+#define LAMP1 16    //Pin Lamp 1
+#define LAMP2 17    //Pin Lamp 2
 #define rfidLED 0  //Pin Red LED RFID
-#define pirIN 17  //PIR In n
-#define pirOUT 18 //PIR Out
 
 int vLAMP1, vLAMP2, vIRAPP;
 
@@ -125,7 +123,7 @@ void setupMISC() {
   Serial.println("RFID IS READY");
   dht.begin();
   myservo.attach(DOOR);
-  myservo.write(0);
+  myservo.write(90);
 
   IrSender.begin(IRTX);
   Blynk.begin(AUTH, SSID, PASSWORD);
@@ -249,8 +247,7 @@ void rfidPermitted() {
   noTone(ALARM);
   digitalWrite(rfidLED, LOW);
   delay(2000);  //2s
-  myservo.write(0);
-  myservo.detach();
+  myservo.write(90);
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("IoT Work Space");
@@ -394,11 +391,6 @@ void controlAPP() {
   if (Hours != checkOutHours && Mins != checkOutMins) {
     controlvLAMP();
   } else {}
-}
-
-//prep algo
-void standby(){
-   
 }
 
 void loop() {

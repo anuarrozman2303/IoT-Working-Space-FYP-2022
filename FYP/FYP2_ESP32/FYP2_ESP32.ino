@@ -1,3 +1,12 @@
+#define BLYNK_PRINT Serial
+#define BLYNK_TEMPLATE_ID "TMPLVzbHHHYj"
+#define BLYNK_DEVICE_NAME "IoT Working Space"
+#define BLYNK_AUTH_TOKEN "zmFpMhwKFk1N0gjtJOte95wKcwC9B6WG"
+#define FIREBASE_HOST     "test-5a42b-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_AUTH     "EinObk758cqiUwi05wRJNDtBmiweE4FXv68dlBWh"
+#define APP_KEY           "47f05c0b-8f2c-4b74-a5d2-c00aec445c57"      
+#define APP_SECRET        "4b9fa934-ee9b-4fd0-8a7c-c4a3b9807804-e696b366-91f3-47a6-b2f9-c8f3489cf562"   
+
 #include "ZMPT101B.h"
 #include "EmonLib.h" 
 #include <SinricPro.h>
@@ -15,11 +24,6 @@
        #define NDEBUG
 #endif 
 
-#define BLYNK_PRINT Serial
-#define FIREBASE_HOST     "test-5a42b-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH     "EinObk758cqiUwi05wRJNDtBmiweE4FXv68dlBWh"
-#define APP_KEY           "47f05c0b-8f2c-4b74-a5d2-c00aec445c57"      
-#define APP_SECRET        "4b9fa934-ee9b-4fd0-8a7c-c4a3b9807804-e696b366-91f3-47a6-b2f9-c8f3489cf562"   
 #define IRAPP             "639094ceb8a7fefbd65770cc"    
 #define LAMP1             "638f7c72b8a7fefbd6568b49"   
 #define LAMP2             "6390948e333d12dd2a0bd4bd"  
@@ -35,7 +39,7 @@ unsigned long previousMillis1 = 0;
 
 char SSID[] = "semanz";
 char PASSWORD[] = "33632407";
-char AUTH[] = "zmFpMhwKFk1N0gjtJOte95wKcwC9B6WG";
+char AUTH[] = BLYNK_AUTH_TOKEN;
 
 FirebaseData fbdo;
 
@@ -74,7 +78,7 @@ void setupEnergy(){
 }
 
 void setup(){
-  Serial.begin(115200);
+  Serial.begin(9600);
   setupWIFI();
   setupFB();
   setupSinricPro();
@@ -82,7 +86,7 @@ void setup(){
 }
 
 void energyMonitor(){
-  Irms = emon1.calcIrms(5588) - 1.3;  //Irms
+  Irms = emon1.calcIrms(5588) - 1;  //Irms
   Vrms = voltageSensor.getVoltageAC(); //Vrms
 
   if (Irms < 0){
@@ -115,13 +119,13 @@ void energyMonitor(){
 }
 
 void loop(){
-  Blynk.run();
   unsigned long currentMillis = millis();
   if ((unsigned long)(currentMillis - previousMillis1) >= interval) {
     energyMonitor();
     previousMillis1 = millis();
   }
   SinricPro.handle();
+  Blynk.run();
 }
 
 bool onPowerState1(const String &deviceId, bool &state) {
