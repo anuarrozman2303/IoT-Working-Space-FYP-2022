@@ -37,8 +37,8 @@ float Vrms, Irms, aPower, kWh;
 unsigned long interval = 1000;
 unsigned long previousMillis1 = 0;
 
-char SSID[] = "semanz";
-char PASSWORD[] = "33632407";
+char SSID[] = "nuar";
+char PASSWORD[] = "anuar123";
 char AUTH[] = BLYNK_AUTH_TOKEN;
 
 FirebaseData fbdo;

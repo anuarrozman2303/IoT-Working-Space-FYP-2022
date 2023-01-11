@@ -20,8 +20,8 @@
 #include <BlynkSimpleMKR1000.h>
 #include <Firebase_Arduino_WiFi101.h>
 
-char SSID[] = "semanz";
-char PASSWORD[] = "33632407";
+char SSID[] = "nuar";
+char PASSWORD[] = "anuar123";
 char AUTH[] = BLYNK_AUTH_TOKEN;
 
 RTCZero rtc;
