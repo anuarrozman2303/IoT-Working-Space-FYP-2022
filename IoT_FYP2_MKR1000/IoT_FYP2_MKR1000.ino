@@ -188,6 +188,7 @@ void lcdDate(){
 }
 
 void controlvLAMP() {
+  myservo.detach();
   if (dbLamp1 == 1) {
     digitalWrite(LAMP1, HIGH);
     Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP1", "ON");
@@ -206,13 +207,11 @@ void controlvLAMP() {
 
   if (dbIRApp == 1) {
     Firebase.setString(firebaseData, "/MEETING ROOM 1/IR APP", "ON");
-    myservo.detach();
     IrSender.sendNEC(0xFFE01F, 32);
     IrSender.sendNEC(0xFFE01F, 32);
     IrSender.sendNEC(0xFFE01F, 32);
   } else {
     Firebase.setString(firebaseData, "/MEETING ROOM 1/IR APP", "OFF");
-    myservo.detach();
     IrSender.sendNEC(0xFF609F, 32);
     IrSender.sendNEC(0xFF609F, 32);
     IrSender.sendNEC(0xFF609F, 32);
@@ -220,11 +219,11 @@ void controlvLAMP() {
 }
 
 void offApp() {
+  myservo.detach();
   digitalWrite(LAMP1, LOW);
   Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP1", "OFF");
   digitalWrite(LAMP2, LOW);
   Firebase.setString(firebaseData, "/MEETING ROOM 1/LAMP2", "OFF");
-  myservo.detach();
   IrSender.sendNEC(0xFF609F, 32);
   IrSender.sendNEC(0xFF609F, 32);
   IrSender.sendNEC(0xFF609F, 32);
@@ -240,7 +239,7 @@ void rfidPermitted() {
   lcd.print("Welcome To IoT");
   lcd.setCursor(0, 1);
   lcd.print("Working Space");
-  myservo.write(180);
+  myservo.write(50);
   digitalWrite(rfidLED, HIGH);
   tone(ALARM, 5000);
   delay(300);
